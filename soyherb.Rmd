@@ -1,0 +1,251 @@
+---
+title: "Soybean herbicide study - Dan Smith"
+author: "Maxwel Coura Oliveira"
+date: "10/28/2020"
+output: 
+  html_document: 
+    toc: yes
+    highlight: zenburn
+    theme: simplex
+    number_sections: yes
+---
+
+# Load packages 
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(emmeans)
+library(glmmTMB)
+library(kableExtra)
+```
+
+# Load dataset
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+data <- read_csv("SB12.csv")
+```
+
+## Glimpse dataset
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+glimpse(data)
+```
+
+## Skim dataset
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+skimr::skim(data)
+```
+
+
+
+# Data visualization
+
+## Waterhemp control at 14 DAT
+
+```{r fig.align='center'}
+ggplot(data, aes(x=reorder(other,waterhempcontrol_14), y=waterhempcontrol_14,
+       fill=trade, color=trade)) +
+  geom_boxplot(color="black") +
+  geom_jitter(alpha=0.2) +
+  facet_grid(year ~ location) +
+  coord_flip() +
+  labs(x="", y="Waterhemp control (%)") +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+
+## Waterhemp control at 28 DAT
+
+```{r fig.align='center'}
+ggplot(data, aes(x=reorder(other,waterhempcontrol_28), y=waterhempcontrol_28,
+       fill=trade, color=trade)) +
+  geom_boxplot(color="black") +
+  geom_jitter(alpha=0.2) +
+  facet_grid(year ~ location) +
+  coord_flip() +
+  labs(x="", y="Waterhemp control (%)") +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+
+
+
+## Waterhemp control at harvest
+
+```{r fig.align='center', message=FALSE, warning=FALSE}
+ggplot(data, aes(x=reorder(other,waterhempcontrol_harvest), y=waterhempcontrol_harvest,
+       fill=trade, color=trade)) +
+  geom_boxplot(color="black") +
+  geom_jitter(alpha=0.2) +
+  facet_grid(year ~ location) +
+  coord_flip() +
+  labs(x="", y="Waterhemp control (%)") +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+
+## Yield (bu/acre)
+
+```{r message=FALSE, warning=FALSE, fig.align='center'}
+ggplot(data, aes(x=reorder(other,yield_bu), y=yield_bu,
+       fill=trade, color=trade)) +
+  geom_boxplot(color="black") +
+  geom_jitter(alpha=0.2) +
+  facet_grid(year ~ location) +
+  coord_flip() +
+  labs(x="", y="Waterhemp control (%)") +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+# Data wrangling
+
+```{r}
+new_dt <- 
+  data %>% 
+  rename (herbicide = other) %>% 
+  mutate(
+    wt_14 = waterhempcontrol_14/100,
+    wt_28 = waterhempcontrol_28/100,
+    yield_kg = yield_bu * 67.5) %>% 
+  mutate(
+    wt_14 = 
+      case_when(
+        waterhempcontrol_14 == 100   ~  0.99,
+        TRUE            ~ wt_14),
+    wt_28 = case_when(
+        waterhempcontrol_28 == 100   ~  0.99,
+        waterhempcontrol_28 == 0   ~  0.01,
+        TRUE            ~ wt_28)) %>% 
+  filter(
+    herbicide != "PRE only"
+  )
+```
+
+
+# Data analysis
+
+## Waterhemp control at 14 DAT
+
+### Model
+
+* Model using herbicide trts, year, and location as fixed effects. Only rep as random effects
+
+```{r message=FALSE, warning=FALSE}
+model_14 <- glmmTMB(wt_14 ~ herbicide * location * year + (1|rep), beta_family(link = "logit"), data=new_dt)
+```
+
+### Anova
+
+```{r message=FALSE, warning=FALSE}
+glmmTMB:::Anova.glmmTMB(model_14)
+```
+
+* Anova shows no interaction of year, herbicide and location. There is only herbicide and year effects
+
+
+### New model
+
+Model using herbicide trt as fixed, and rep, year, and location as random effects
+
+```{r message=FALSE, warning=FALSE}
+model_14_2 <- glmmTMB(wt_14 ~ herbicide + (1|rep) + (1|location/year), beta_family(link = "logit"), data=new_dt)
+```
+
+### New Anova
+
+```{r message=FALSE, warning=FALSE}
+glmmTMB:::Anova.glmmTMB(model_14_2)
+```
+
+- No effects of herbicide treatments. However, I am looking into herbicide effects.
+
+### Least square means
+
+```{r }
+lsmeans_14<- emmeans(model_14_2, ~ herbicide, cont="pairwise", adjust="none", type="response", alpha=0.05)
+```
+
+
+### Compact letter display
+
+```{r fig.align='center'}
+plot(lsmeans_14, ~ herbicide, comparisons=TRUE, type="response", alpha=0.05, adjust="none")
+```
+
+
+```{r message=FALSE, warning =FALSE}
+CLD(lsmeans_14$emmeans, alpha=0.05, Letters=letters, adjust="none", reversed = TRUE) %>%
+  kbl() %>%
+  kable_classic_2(full_width = F)
+```
+
+## Waterhemp control at 28 DAT
+
+### Model
+
+* Model using herbicide trts, year, and location as fixed effects. Only rep as random effects
+
+```{r message=FALSE, warning=FALSE}
+model_28 <- glmmTMB(wt_28 ~ herbicide * location * year + (1|rep), beta_family(link = "logit"), data=new_dt)
+```
+
+### Anova
+
+```{r message=FALSE, warning=FALSE}
+glmmTMB:::Anova.glmmTMB(model_28)
+```
+
+
+
+* Anova shows no interaction of year, herbicide and location. There is only herbicide and year effects
+
+
+### New model
+
+Model using herbicide trt as fixed, and rep, year, and location as random effects
+
+```{r message=FALSE, warning=FALSE}
+model_28_2 <- glmmTMB(wt_28 ~ herbicide + (1|rep) + (1|location/year), beta_family(link = "logit"), data=new_dt)
+```
+
+### New Anova
+
+```{r message=FALSE, warning=FALSE}
+glmmTMB:::Anova.glmmTMB(model_28_2)
+```
+
+- No effects of herbicide treatments
+
+### Least square means
+
+#### Herbicide
+
+```{r }
+lsmeans_28<- emmeans(model_28_2, ~ herbicide, cont="pairwise", adjust="none", type="response", alpha=0.05)
+```
+
+### Plot
+
+```{r fig.align='center'}
+plot(lsmeans_28, ~ herbicide, comparisons=TRUE, type="response", alpha=0.05, adjust="none")
+```
+
+### Compact letter display
+
+```{r message=FALSE, warning =FALSE}
+CLD(lsmeans_28$emmeans, alpha=0.05, Letters=letters, adjust="none", reversed = TRUE) %>%
+  kbl() %>%
+  kable_classic_2(full_width = F)
+```
+
+
+```{r include=FALSE}
+if(requireNamespace("multcomp")) {
+    multcomp::cld(lsmeans_28$emmeans, alpha=0.05, Letters=letters, adjust="none", reversed = TRUE)
+}
+```
+
