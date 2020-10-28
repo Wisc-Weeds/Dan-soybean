@@ -5,9 +5,10 @@ date: "10/28/2020"
 output: 
   html_document: 
     toc: yes
-    highlight: zenburn
-    theme: simplex
+    theme: yeti
     number_sections: yes
+    toc_depth: 4
+    highlight: espresso
 ---
 
 # Load packages 
@@ -17,6 +18,8 @@ library(tidyverse)
 library(emmeans)
 library(glmmTMB)
 library(kableExtra)
+library(lme4)
+library(lmerTest)
 ```
 
 # Load dataset
@@ -86,6 +89,23 @@ ggplot(data, aes(x=reorder(other,waterhempcontrol_harvest), y=waterhempcontrol_h
   theme_minimal() +
   theme(legend.position = "none")
 ```
+
+
+## Weed biomass
+
+```{r fig.align='center', message=FALSE, warning=FALSE}
+ggplot(data, aes(x=reorder(other,biomass_gm2), y=biomass_gm2,
+       fill=trade, color=trade)) +
+  geom_boxplot(color="black") +
+  geom_jitter(alpha=0.2) +
+  facet_grid(year ~ location) +
+  coord_flip() +
+  labs(x="", y="Weed biomass (g m2)") +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+
 
 
 ## Yield (bu/acre)
@@ -222,10 +242,8 @@ glmmTMB:::Anova.glmmTMB(model_28_2)
 
 ### Least square means
 
-#### Herbicide
-
 ```{r }
-lsmeans_28<- emmeans(model_28_2, ~ herbicide, cont="pairwise", adjust="none", type="response", alpha=0.05)
+lsmeans_28 <- emmeans(model_28_2, ~ herbicide, cont="pairwise", adjust="none", type="response", alpha=0.05)
 ```
 
 ### Plot
@@ -249,3 +267,72 @@ if(requireNamespace("multcomp")) {
 }
 ```
 
+
+
+## Yield 
+
+
+### Yield raw data distribution
+
+```{r warning=FALSE, message=FALSE}
+library(ggridges)
+new_dt %>% 
+  ggplot(
+    aes(y=herbicide, x=yield_kg, fill=herbicide)) +
+      geom_density_ridges(scale=2, show.legend = FALSE)
+```
+
+### Data manipulation
+
+```{r warning=FALSE, message=FALSE}
+yield_dt <- new_dt %>% 
+  mutate(
+    siteyr = case_when(
+      location == "Lancaster" & year == 2020 ~ "Lan20",
+      location == "Lancaster" & year == 2019 ~ "Lan19",
+      location == "Brooklyn" & year == 2020 ~ "Bro20",
+      location == "Brooklyn" & year == 2019 ~ "Bro19",
+      TRUE                     ~  "siteyr"
+    )
+  )
+```
+
+### Model
+
+```{r warning=FALSE}
+fit <- lmer(yield_kg ~ herbicide * siteyr + (1|rep), data=yield_dt)
+```
+
+### Anova
+
+```{r}
+anova(fit)
+```
+
+### Least square means
+
+
+```{r }
+lsmeans_fit <- emmeans(fit, ~ siteyr, cont="pairwise", adjust="none", alpha=0.05)
+```
+
+### Plot
+
+```{r fig.align='center'}
+plot(lsmeans_fit, ~ siteyr, comparisons=TRUE, type="response", alpha=0.05, adjust="none")
+```
+
+### Compact letter display
+
+```{r message=FALSE, warning =FALSE}
+CLD(lsmeans_fit$emmeans, alpha=0.05, Letters=letters, adjust="none", reversed = TRUE) %>%
+  kbl() %>%
+  kable_classic_2(full_width = F)
+```
+
+
+<br><br>
+
+```{r echo=FALSE, out.width=400, fig.align='center'}
+knitr::include_graphics("https://media.giphy.com/media/l0Iyl55kTeh71nTXy/giphy.gif")
+```

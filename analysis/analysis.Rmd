@@ -1,0 +1,352 @@
+---
+title: "Soybean Glufosinate Study"
+date: "`r Sys.Date()`"
+output:
+  rmdformats::readthedown:
+    highlight: kate
+---
+
+
+```{r setup, echo=FALSE, cache=FALSE}
+library(knitr)
+library(rmdformats)
+
+## Global options
+options(max.print="75")
+opts_chunk$set(echo=FALSE,
+	             cache=TRUE,
+               prompt=FALSE,
+               tidy=TRUE,
+               comment=NA,
+               message=FALSE,
+               warning=FALSE)
+opts_knit$set(width=75)
+```
+
+# Load packages 
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(emmeans)
+library(glmmTMB)
+library(kableExtra)
+library(lme4)
+library(lmerTest)
+```
+
+# Load dataset
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+data <- read_csv("SB12.csv")
+```
+
+## Glimpse dataset
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+glimpse(data)
+```
+
+## Skim dataset
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+skimr::skim(data)
+```
+
+
+
+# Data visualization
+
+## Waterhemp control at 14 DAT
+
+```{r fig.align='center', message=FALSE, warning=FALSE, echo=TRUE}
+ggplot(data, aes(x=reorder(other,waterhempcontrol_14), y=waterhempcontrol_14,
+       fill=trade, color=trade)) +
+  geom_boxplot(color="black") +
+  geom_jitter(alpha=0.2) +
+  facet_grid(year ~ location) +
+  coord_flip() +
+  labs(x="", y="Waterhemp control (%)") +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+
+## Waterhemp control at 28 DAT
+
+```{r fig.align='center', message=FALSE, warning=FALSE, echo=TRUE}
+ggplot(data, aes(x=reorder(other,waterhempcontrol_28), y=waterhempcontrol_28,
+       fill=trade, color=trade)) +
+  geom_boxplot(color="black") +
+  geom_jitter(alpha=0.2) +
+  facet_grid(year ~ location) +
+  coord_flip() +
+  labs(x="", y="Waterhemp control (%)") +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+
+
+
+## Waterhemp control at harvest
+
+```{r fig.align='center', message=FALSE, warning=FALSE, echo=TRUE}
+ggplot(data, aes(x=reorder(other,waterhempcontrol_harvest), y=waterhempcontrol_harvest,
+       fill=trade, color=trade)) +
+  geom_boxplot(color="black") +
+  geom_jitter(alpha=0.2) +
+  facet_grid(year ~ location) +
+  coord_flip() +
+  labs(x="", y="Waterhemp control (%)") +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+
+## Weed biomass
+
+```{r fig.align='center', message=FALSE, warning=FALSE, echo=TRUE}
+ggplot(data, aes(x=reorder(other,biomass_gm2), y=biomass_gm2,
+       fill=trade, color=trade)) +
+  geom_boxplot(color="black") +
+  geom_jitter(alpha=0.2) +
+  facet_grid(year ~ location) +
+  coord_flip() +
+  labs(x="", y="Weed biomass (g m2)") +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+
+
+
+## Yield (bu/acre)
+
+```{r message=FALSE, warning=FALSE, fig.align='center', echo=TRUE}
+ggplot(data, aes(x=reorder(other,yield_bu), y=yield_bu,
+       fill=trade, color=trade)) +
+  geom_boxplot(color="black") +
+  geom_jitter(alpha=0.2) +
+  facet_grid(year ~ location) +
+  coord_flip() +
+  labs(x="", y="Waterhemp control (%)") +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+# Data wrangling
+
+```{r message=FALSE, warning=FALSE, echo=TRUE}
+new_dt <- 
+  data %>% 
+  rename (herbicide = other) %>% 
+  mutate(
+    wt_14 = waterhempcontrol_14/100,
+    wt_28 = waterhempcontrol_28/100,
+    yield_kg = yield_bu * 67.5) %>% 
+  mutate(
+    wt_14 = 
+      case_when(
+        waterhempcontrol_14 == 100   ~  0.99,
+        TRUE            ~ wt_14),
+    wt_28 = case_when(
+        waterhempcontrol_28 == 100   ~  0.99,
+        waterhempcontrol_28 == 0   ~  0.01,
+        TRUE            ~ wt_28)) %>% 
+  filter(
+    herbicide != "PRE only"
+  )
+```
+
+
+# Data analysis
+
+## Waterhemp control at 14 DAT
+
+### Model
+
+* Model using herbicide trts, year, and location as fixed effects. Only rep as random effects
+
+```{r message=FALSE, warning=FALSE, echo=TRUE}
+model_14 <- glmmTMB(wt_14 ~ herbicide * location * year + (1|rep), beta_family(link = "logit"), data=new_dt)
+```
+
+### Anova
+
+```{r message=FALSE, warning=FALSE, echo=TRUE}
+glmmTMB:::Anova.glmmTMB(model_14)
+```
+
+* Anova shows no interaction of year, herbicide and location. There is only herbicide and year effects
+
+
+### New model
+
+Model using herbicide trt as fixed, and rep, year, and location as random effects
+
+```{r message=FALSE, warning=FALSE, echo=TRUE}
+model_14_2 <- glmmTMB(wt_14 ~ herbicide + (1|rep) + (1|location/year), beta_family(link = "logit"), data=new_dt)
+```
+
+### New Anova
+
+```{r message=FALSE, warning=FALSE, echo=TRUE}
+glmmTMB:::Anova.glmmTMB(model_14_2)
+```
+
+- No effects of herbicide treatments. However, I am looking into herbicide effects.
+
+### Least square means
+
+```{r message=FALSE, warning=FALSE, echo=TRUE}
+lsmeans_14<- emmeans(model_14_2, ~ herbicide, cont="pairwise", adjust="none", type="response", alpha=0.05)
+```
+
+
+### Compact letter display
+
+```{r fig.align='center', message=FALSE, warning=FALSE, echo=TRUE}
+plot(lsmeans_14, ~ herbicide, comparisons=TRUE, type="response", alpha=0.05, adjust="none")
+```
+
+
+```{r message=FALSE, warning=FALSE, echo=TRUE}
+CLD(lsmeans_14$emmeans, alpha=0.05, Letters=letters, adjust="none", reversed = TRUE) %>%
+  kbl() %>%
+  kable_classic_2(full_width = F)
+```
+
+## Waterhemp control at 28 DAT
+
+### Model
+
+* Model using herbicide trts, year, and location as fixed effects. Only rep as random effects
+
+```{r message=FALSE, warning=FALSE, echo=TRUE}
+model_28 <- glmmTMB(wt_28 ~ herbicide * location * year + (1|rep), beta_family(link = "logit"), data=new_dt)
+```
+
+### Anova
+
+```{r message=FALSE, warning=FALSE, echo=TRUE}
+glmmTMB:::Anova.glmmTMB(model_28)
+```
+
+
+
+* Anova shows no interaction of year, herbicide and location. There is only herbicide and year effects
+
+
+### New model
+
+Model using herbicide trt as fixed, and rep, year, and location as random effects
+
+```{r message=FALSE, warning=FALSE, echo=TRUE}
+model_28_2 <- glmmTMB(wt_28 ~ herbicide + (1|rep) + (1|location/year), beta_family(link = "logit"), data=new_dt)
+```
+
+### New Anova
+
+```{r message=FALSE, warning=FALSE, echo=TRUE}
+glmmTMB:::Anova.glmmTMB(model_28_2)
+```
+
+- No effects of herbicide treatments
+
+### Least square means
+
+```{r message=FALSE, warning=FALSE, echo=TRUE}
+lsmeans_28 <- emmeans(model_28_2, ~ herbicide, cont="pairwise", adjust="none", type="response", alpha=0.05)
+```
+
+### Plot
+
+```{r fig.align='center', echo=TRUE}
+plot(lsmeans_28, ~ herbicide, comparisons=TRUE, type="response", alpha=0.05, adjust="none")
+```
+
+### Compact letter display
+
+```{r message=FALSE, warning =FALSE, echo=TRUE}
+CLD(lsmeans_28$emmeans, alpha=0.05, Letters=letters, adjust="none", reversed = TRUE) %>%
+  kbl() %>%
+  kable_classic_2(full_width = F)
+```
+
+
+```{r include=FALSE}
+if(requireNamespace("multcomp")) {
+    multcomp::cld(lsmeans_28$emmeans, alpha=0.05, Letters=letters, adjust="none", reversed = TRUE)
+}
+```
+
+
+
+## Yield 
+
+
+### Yield raw data distribution
+
+
+```{r warning=FALSE, message=FALSE, echo=TRUE}
+library(ggridges)
+new_dt %>% 
+  ggplot(
+    aes(y=herbicide, x=yield_kg, fill=herbicide)) +
+      geom_density_ridges(scale=2, show.legend = FALSE)
+```
+
+### Data manipulation
+
+```{r warning=FALSE, message=FALSE, echo=TRUE}
+yield_dt <- new_dt %>% 
+  mutate(
+    siteyr = case_when(
+      location == "Lancaster" & year == 2020 ~ "Lan20",
+      location == "Lancaster" & year == 2019 ~ "Lan19",
+      location == "Brooklyn" & year == 2020 ~ "Bro20",
+      location == "Brooklyn" & year == 2019 ~ "Bro19",
+      TRUE                     ~  "siteyr"
+    )
+  )
+```
+
+### Model
+
+```{r warning=FALSE, message=FALSE, echo=TRUE}
+fit <- lmer(yield_kg ~ herbicide * siteyr + (1|rep), data=yield_dt)
+```
+
+### Anova
+
+```{r echo=TRUE}
+anova(fit)
+```
+
+### Least square means
+
+
+```{r echo=TRUE}
+lsmeans_fit <- emmeans(fit, ~ siteyr, cont="pairwise", adjust="none", alpha=0.05)
+```
+
+### Plot
+
+```{r fig.align='center', echo=TRUE}
+plot(lsmeans_fit, ~ siteyr, comparisons=TRUE, type="response", alpha=0.05, adjust="none")
+```
+
+### Compact letter display
+
+```{r message=FALSE, warning =FALSE, echo=TRUE}
+CLD(lsmeans_fit$emmeans, alpha=0.05, Letters=letters, adjust="none", reversed = TRUE) %>%
+  kbl() %>%
+  kable_classic_2(full_width = F)
+```
+
+
+<br><br>
+
+```{r echo=FALSE, out.width=400, fig.align='center'}
+knitr::include_graphics("https://media.giphy.com/media/l0Iyl55kTeh71nTXy/giphy.gif")
+```
