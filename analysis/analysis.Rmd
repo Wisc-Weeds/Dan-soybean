@@ -1,7 +1,7 @@
 ---
 title: "Soybean Glufosinate Study"
 date: "`r Sys.Date()`"
-output:
+output: 
   rmdformats::readthedown:
     highlight: kate
 ---
