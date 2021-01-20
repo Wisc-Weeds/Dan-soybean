@@ -3,7 +3,7 @@ title: "Soybean herbicide study - Dan Smith"
 author: "Maxwel Coura Oliveira"
 date: "10/28/2020"
 output: 
-  html_document: 
+  html_document:
     toc: yes
     theme: yeti
     number_sections: yes
