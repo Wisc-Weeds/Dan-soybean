@@ -66,10 +66,10 @@ model1 <- brm(wt_14 ~ herbicide +
                 (1|rep/location/year),
                   family = Beta(link = "logit", link_phi = "log"),
                warmup = 1000, iter = 2000, chains = 4, 
-              control = list(adapt_delta = 0.999, max_treedepth = 15),
-               prior = set_prior("student_t(0.1, 0.5, 2)", 
+              control = list(adapt_delta = 0.999, max_treedepth = 11),
+               prior = set_prior("student_t(0.1, 0.5, 8)", 
                                  class = "b"),
-#                                 seed = 1235,
+              seed = 1234,
                   data = new_dt, save_pars = save_pars(all = TRUE))
 ```
 
@@ -81,6 +81,7 @@ summary(model1)
 ```{r}
 epred1 <- emmeans(model1, "herbicide", epred = TRUE, cont="pairwise")
 ```
+
 
 ```{r}
 w14_main <- pairs(emmeans(model1, ~ herbicide))
@@ -105,9 +106,10 @@ model2 <- brm(wt_28 ~ herbicide +
                 (1|rep/location/year),
                   family = Beta(link = "logit", link_phi = "log"),
                warmup = 1000, iter = 2000, chains = 4, 
-              control = list(adapt_delta = 0.999),
-               prior = set_prior("student_t(0.1, 0.5, 2)", 
+              control = list(adapt_delta = 0.999, max_treedepth = 11),
+               prior = set_prior("student_t(0.1, 0.5, 8)", 
                                  class = "b"),
+              seed = 1234,
                   data = new_dt, save_pars = save_pars(all = TRUE))
 ```
 
@@ -129,11 +131,52 @@ describe_posterior(w28_main,
                    bf_prior = model2)
 ```
 
+
 ```{r}
 epred2$emmeans %>% 
   as_tibble() %>% 
   mutate(DAT = "28 DAT") -> epred2_2
 ```
+
+
+```{r}
+model3 <- brm(biomass_gm2 ~ herbicide +
+                (1|rep/location/year), 
+                  family = gaussian(),
+               warmup = 1000, iter = 2000, chains = 4, 
+              control = list(adapt_delta = 0.999, max_treedepth = 11),
+               prior = set_prior("student_t(0.1, 1, 8)", 
+                                 class = "b"),
+              seed = 1234,
+                  data = new_dt, save_pars = save_pars(all = TRUE))
+```
+
+```{r}
+summary(model3)
+```
+
+```{r}
+new_dt %>% 
+  group_by(herbicide) %>% 
+  summarise(biomass = mean(biomass_gm2, na.rm = TRUE),
+            counts = sd(biomass_gm2, na.rm = TRUE))
+```
+
+```{r}
+epred3 <- emmeans(model3, "herbicide", epred = TRUE, cont="pairwise")
+```
+
+```{r}
+yield_main <- pairs(emmeans(model4, ~ herbicide))
+
+describe_posterior(yield_main,
+                   centrality = "mean", dispersion = TRUE,
+                   ci = .95, ci_method = "hdi",
+                   test = c("bayesfactor"),
+                   bf_prior = model4)
+```
+
+
 
 # Figures
 
@@ -141,7 +184,8 @@ epred2$emmeans %>%
 epred1_1 %>% 
   bind_rows(epred2_2) %>% 
   mutate(herbicide = fct_recode(herbicide,
-                                "PRE fb glufosinate + fomesafen + *S*-metolachlor" = "PRE fb glufosinate + fomesafen + S-metolachlor")) -> epred_wt
+                                "PRE fb glufosinate + fomesafen + *S*-metolachlor" = "PRE fb glufosinate + fomesafen + S-metolachlor")) %>% 
+  mutate(herbicide = str_remove(herbicide, "PRE fb ")) -> epred_wt
 ```
 
 
@@ -162,15 +206,16 @@ ggplot(aes(x = fct_reorder(herbicide, emmean),
                     vjust = 0.5,
                     position = position_dodge2(width = 0.4),
                     seed = 465) +
-  scale_color_brewer(palette = "Set1") +
+#  scale_color_brewer(palette = "Set1") +
+  scale_color_calc() +
   ylim(0, 100) +
   labs(x = NULL, y = "Waterhemp control (%)") +
   theme_bw() +
   theme(axis.text.y = element_markdown(),
-        strip.text = element_markdown(size = 11),
+        strip.text = element_markdown(size = 11, face = "bold"),
         legend.position = "none")
 
-ggsave("figures/Figure 1.png", width = 9)
+ggsave("figures/Figure 2.png", width = 9)
 ```
 
 # Yield
@@ -184,18 +229,26 @@ new_dt %>%
 
 
 ```{r}
-model4 <- brm(yield_kg ~ herbicide +
+model4 <- brm(yield_bu ~ herbicide +
                 (1|rep/location/year), 
                   family = gaussian(),
                warmup = 1000, iter = 2000, chains = 4, 
-              control = list(adapt_delta = 0.999, max_treedepth = 15),
-               prior = set_prior("normal(0, 2)", 
+              control = list(adapt_delta = 0.999, max_treedepth = 11),
+               prior = set_prior("student_t(0.1, 2, 8)", 
                                  class = "b"),
+              seed = 1234,
                   data = new_dt, save_pars = save_pars(all = TRUE))
 ```
 
 ```{r}
 summary(model4)
+```
+
+```{r}
+new_dt %>% 
+  group_by(herbicide) %>% 
+  summarise(biomass = mean(biomass_gm2, na.rm = TRUE),
+            counts = mean(counts_m2, na.rm = TRUE))
 ```
 
 ```{r}
@@ -210,4 +263,33 @@ describe_posterior(yield_main,
                    ci = .95, ci_method = "hdi",
                    test = c("bayesfactor"),
                    bf_prior = model4)
+```
+
+
+
+```{r}
+epred4$emmeans |> as_tibble() %>% 
+ggplot(aes(x = fct_reorder(herbicide, emmean), 
+           y = emmean, color = herbicide)) +
+  geom_point(size = 2) +
+  geom_linerange(aes(ymin = lower.HPD, ymax = upper.HPD),
+                 size = 1.2) +
+  coord_flip() +
+  geom_text_repel(aes(label = round(emmean,1)), size = 3.5,
+                    force_pull = 0,
+                    direction = "y",
+                    point.padding = NA,
+                    min.segment.length = 14,
+                    vjust = 0.5,
+                    position = position_dodge2(width = 0.4),
+                    seed = 465) +
+  scale_color_brewer(palette = "Set1") +
+  ylim(0, 100) +
+  labs(x = NULL, y = "Waterhemp control (%)") +
+  theme_bw() +
+  theme(axis.text.y = element_markdown(),
+        strip.text = element_markdown(size = 11),
+        legend.position = "none")
+
+ggsave("figures/Figure 3.png", width = 9)
 ```

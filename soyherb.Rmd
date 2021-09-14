@@ -80,8 +80,6 @@ ggplot(data, aes(x=reorder(other,waterhempcontrol_28), y=waterhempcontrol_28,
 ```
 
 
-
-
 ## Waterhemp control at harvest
 
 ```{r fig.align='center', message=FALSE, warning=FALSE}
