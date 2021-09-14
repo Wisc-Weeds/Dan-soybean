@@ -157,9 +157,10 @@ summary(model3)
 
 ```{r}
 new_dt %>% 
-  group_by(herbicide) %>% 
+  group_by(herbicide, location) %>% 
   summarise(biomass = mean(biomass_gm2, na.rm = TRUE),
-            counts = sd(biomass_gm2, na.rm = TRUE))
+            sd = sd(biomass_gm2, na.rm = TRUE)) %>% 
+  filter(location == "Brooklyn")
 ```
 
 ```{r}
