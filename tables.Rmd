@@ -20,6 +20,8 @@ tables <- read_csv("tables.csv")
 ```{r}
 tables %>%
   mutate_if(is.double, ~round(.,2)) |> 
+#  mutate(Parameter = fct_recode(Parameter,
+#                                "glufosinate vs glufosinate + <i>S</i>-metolachlor" = "glufosinate vs glufosinate + S-metolachlor")) |> 
   gt() %>% 
   gt_theme_espn() |> 
   tab_spanner(
@@ -32,7 +34,7 @@ tables %>%
     )) |> 
   gt_highlight_rows(rows = c(1,3:5,7), 
                     font_weight = "bold", 
-                    fill = "#f8ff00")  -> fig_tab#|> 
+                    fill = "beige")  -> fig_tab#|> 
 #  gt_hulk_col_numeric(`14 DAT`:Yield, reverse = FALSE, trim = TRUE)
 
 
