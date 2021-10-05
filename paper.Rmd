@@ -174,8 +174,8 @@ epred_wt |>
 
 
 ```{r}
-epred_wt1 %>% 
-ggplot(aes(x = herbicide, 
+epred_wt %>% 
+ggplot(aes(x = fct_reorder(herbicide, emmean),
            y = emmean * 100, color = herbicide)) +
   geom_point(size = 2) +
   geom_linerange(aes(ymin = lower.HPD * 100, ymax = upper.HPD * 100),
@@ -188,7 +188,7 @@ ggplot(aes(x = herbicide,
                     point.padding = NA,
                     min.segment.length = 14,
                     vjust = 0.5,
-                    position = position_dodge2(width = 0.4),
+                    position = position_nudge_repel(x = 0.3),
                     seed = 465) +
 #  scale_color_brewer(palette = "Set1") +
   scale_color_calc() +
@@ -197,9 +197,12 @@ ggplot(aes(x = herbicide,
   theme_bw() +
   theme(axis.text.y = element_markdown(),
         strip.text = element_markdown(size = 11, face = "bold"),
-        legend.position = "none") -> fig1
+        legend.position = "none",
+        plot.background = element_rect(fill = "#F5F5F5"),
+        panel.background = element_rect(fill = "#F5F5F5"),
+        axis.text = element_markdown(color = "#333333")) -> fig1
 
-ggsave("figures/Figure 2.png", width = 9)
+ggsave("figures/Figure 2.png", width = 8, height = 4)
 ```
 
 # Yield
@@ -282,10 +285,23 @@ epred4_wt %>%
                                             "glufosinate + fomesafen + acetochlor",
                                             "glufosinate + fomesafen + *S*-metolachlor"))) -> epred4_wt1
 ```
+```{r}
+epred4_wt1 %>%
+  mutate(herbicide = fct_relevel(herbicide,
+                                 levels = c("glufosinate", "glufosinate + dimethenamid-P",
+                                            "glufosinate + imazethapyr", 
+                                            "glufosinate + *S*-metolachlor",
+                                            "glufosinate + pyroxasulfone", 
+                                            "glufosinate + acetochlor", "glufosinate + fomesafen",
+                                            "glufosinate + fomesafen + acetochlor",
+                                            "glufosinate + fomesafen + *S*-metolachlor"))) -> epred4_wt1
+```
+
+
 
 ```{r}
-epred4_wt1 %>% 
-ggplot(aes(x = herbicide, 
+epred4_wt %>%
+  ggplot(aes(x = fct_reorder(herbicide, emmean),
            y = emmean, color = herbicide)) +
   geom_point(size = 2) +
   geom_linerange(aes(ymin = lower.HPD, ymax = upper.HPD),
@@ -297,17 +313,20 @@ ggplot(aes(x = herbicide,
                     point.padding = NA,
                     min.segment.length = 14,
                     vjust = 0.5,
-                    position = position_dodge2(width = 0.4),
+                    position = position_nudge_repel(x = 0.3),
                     seed = 465) +
-  scale_color_brewer(palette = "Set1") +
-  ylim(0, 100) +
-  labs(x = NULL, y = "Waterhemp control (%)") +
+  scale_color_calc() +
+  scale_y_continuous(limits = c(0,75), breaks = seq(0, 75, 15)) +
+  labs(x = NULL, y = expression(paste("Soybean yield (bu acre"^"-1",")"))) +
   theme_bw() +
   theme(axis.text.y = element_markdown(),
         strip.text = element_markdown(size = 11),
-        legend.position = "none") -> fig2
+        legend.position = "none",
+        plot.background = element_rect(fill = "#F5F5F5"),
+        panel.background = element_rect(fill = "#F5F5F5"),
+        axis.text = element_markdown(color = "#333333")) -> fig2
 
-ggsave("figures/Figure 3.png", width = 9)
+ggsave("figures/Figure 3.png", width = 6, height = 4)
 ```
 
 ```{r}
