@@ -43,6 +43,7 @@ new_dt <-
   mutate(
     wt_14 = waterhempcontrol_14/100,
     wt_28 = waterhempcontrol_28/100,
+    wt_hv = waterhempcontrol_harvest/100,
     yield_kg = yield_bu * 67.5) %>% 
   mutate(
     wt_14 = 
@@ -146,7 +147,43 @@ epred2$emmeans %>%
 ```
 
 
+# Harvest
 
+```{r}
+model5 <- brm(wt_hv ~ herbicide +
+                (1|rep/location/year),
+                  family = Beta(link = "logit", link_phi = "log"),
+               warmup = 1000, iter = 2000, chains = 4, 
+              control = list(adapt_delta = 0.999, max_treedepth = 11),
+               prior = set_prior("student_t(0.1, 0.5, 8)", 
+                                 class = "b"),
+              seed = 1234,
+                  data = new_dt, save_pars = save_pars(all = TRUE))
+```
+
+
+
+
+```{r}
+summary(model5)
+```
+
+```{r}
+epred5 <- emmeans(model5, "herbicide", epred = TRUE) |> 
+  as_tibble() %>% 
+  mutate(DAT = "Harvest")
+```
+
+
+```{r}
+whv_main <- pairs(emmeans(model5, ~ herbicide))
+
+describe_posterior(whv_main,
+                   centrality = "mean", dispersion = TRUE,
+                   ci = .95, ci_method = "hdi",
+                   test = c("bayesfactor"),
+                   bf_prior = model5)
+```
 
 
 # Figures
@@ -154,6 +191,7 @@ epred2$emmeans %>%
 ```{r}
 epred1_1 %>% 
   bind_rows(epred2_2) %>% 
+  bind_rows(epred5) |> 
   mutate(herbicide = fct_recode(herbicide,
                                 "PRE fb glufosinate + fomesafen + *S*-metolachlor" = "PRE fb glufosinate + fomesafen + S-metolachlor",
                                 "PRE fb glufosinate + *S*-metolachlor" = "PRE fb glufosinate + S-metolachlor")) %>% 
@@ -330,4 +368,56 @@ ggsave("figures/Figure 4.png", width = 6, height = 4)
 ```
 
 
+## Biomass
+
+
+```{r}
+new_dt |> 
+  ungroup() |> 
+  dplyr::mutate(location, year, herbicide, rep, biomass_gm2) |> 
+  filter(!is.na(biomass_gm2)) -> biomass
+```
+
+
+```{r}
+model3 <- brm(biomass_gm2 ~ herbicide +
+                (1|rep/location), 
+                  family = gaussian(),
+               warmup = 1000, iter = 2000, chains = 4, 
+              control = list(adapt_delta = 0.999, max_treedepth = 11),
+               prior = set_prior("student_t(0.1, 2, 8)", 
+                                 class = "b"),
+              seed = 1234,
+                  data = new_dt, save_pars = save_pars(all = TRUE))
+```
+
+```{r}
+epred3 <- emmeans(model3, "herbicide", epred = TRUE,
+                  #cont="pairwise"
+                  )
+epred3
+```
+
+```{r}
+biomass_main <- pairs(emmeans(model3, ~ herbicide))
+
+describe_posterior(biomass_main,
+                   centrality = "median", dispersion = TRUE,
+                   ci = .95, ci_method = "hdi",
+                   test = c("bayesfactor"),
+                   bf_prior = model3)
+```
+
+
+
+
+```{r}
+mod_3 <- lmer(biomass_gm2 ~ herbicide +
+                (1|rep/location),
+                  data = new_dt)
+```
+
+```{r}
+anova(mod_3)
+```
 
