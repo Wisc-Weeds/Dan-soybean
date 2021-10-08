@@ -17,6 +17,7 @@ library(tidymodels)
 library(lmerTest)
 library(ggthemes)
 library(ggrepel)
+library(tidytext)
 ```
 
 ```{r}
@@ -62,6 +63,28 @@ new_dt <-
          year = as.factor(year))
 ```
 
+```{r}
+new_dt |> 
+  ggplot(aes(x = herbicide, y = waterhempcontrol_harvest)) +
+  geom_boxplot() +
+  coord_flip() +
+  geom_jitter() +
+  facet_grid(year ~ location)
+```
+
+
+```{r}
+new_dt |> 
+  ggplot(aes(x = herbicide, y = waterhempcontrol_harvest)) +
+  geom_boxplot() +
+  coord_flip() +
+  geom_jitter() +
+  facet_grid(year ~ location)
+```
+
+
+
+
 # 14 DAT
 
 ```{r}
@@ -103,6 +126,63 @@ epred1$emmeans %>%
   as_tibble() %>% 
   mutate(DAT = "14 DAT") -> epred1_1
 ```
+
+```{r}
+epred1_1 %>% 
+  mutate(herbicide = fct_recode(herbicide,
+                                "PRE fb glufosinate + fomesafen + *S*-metolachlor" = "PRE fb glufosinate + fomesafen + S-metolachlor",
+                                "PRE fb glufosinate + *S*-metolachlor" = "PRE fb glufosinate + S-metolachlor")) %>% 
+  mutate(herbicide = str_remove(herbicide, "PRE fb ")) -> epred1_11
+```
+
+```{r}
+epred1_11 |> 
+  mutate(herbicide = fct_relevel(herbicide,
+                                 levels = c("glufosinate", "glufosinate + dimethenamid-P",
+                                            "glufosinate + imazethapyr", 
+                                            "glufosinate + *S*-metolachlor",
+                                            "glufosinate + pyroxasulfone", "glufosinate + acetochlor",
+                                            "glufosinate + fomesafen + acetochlor",
+                                            "glufosinate + fomesafen + *S*-metolachlor",
+                                            "glufosinate + fomesafen"))) |> 
+  mutate(emmean = round(emmean, 2)) -> epred1_111
+```
+
+```{r}
+epred1_111 %>% 
+ggplot(aes(x = fct_reorder(herbicide, emmean),
+           y = emmean * 100, color = herbicide)) +
+  geom_point(size = 2) +
+  geom_linerange(aes(ymin = lower.HPD * 100, ymax = upper.HPD * 100),
+                 size = 1.2) +
+  coord_flip() +
+  facet_grid(~ DAT) +
+  geom_text_repel(aes(label = round(emmean*100,1)), size = 3.5,
+                    force_pull = 0,
+                    direction = "y",
+                    point.padding = NA,
+                    min.segment.length = 14,
+                    vjust = 0.5,
+                    position = position_nudge_repel(x = 0.3),
+                    seed = 465) +
+#  scale_color_brewer(palette = "Set1") +
+  scale_color_calc() +
+  ylim(0, 100) +
+  labs(x = NULL, y = "Waterhemp control (%)") +
+  theme_bw() +
+  theme(axis.text.y = element_markdown(),
+        axis.title.x = element_blank(),
+        strip.text = element_markdown(size = 11, face = "bold"),
+        legend.position = "none",
+        plot.background = element_rect(fill = "#F5F5F5"),
+        panel.background = element_rect(fill = "#F5F5F5"),
+        axis.text = element_markdown(color = "#333333")) -> fig1
+
+ggsave("figures/Figure 2.png", width = 5, height = 4)
+```
+
+
+
 
 # 28 DAT
 
@@ -147,6 +227,60 @@ epred2$emmeans %>%
 ```
 
 
+```{r}
+epred2_2 %>% 
+  mutate(herbicide = fct_recode(herbicide,
+                                "PRE fb glufosinate + fomesafen + *S*-metolachlor" = "PRE fb glufosinate + fomesafen + S-metolachlor",
+                                "PRE fb glufosinate + *S*-metolachlor" = "PRE fb glufosinate + S-metolachlor")) %>% 
+  mutate(herbicide = str_remove(herbicide, "PRE fb ")) -> epred2_22
+```
+
+```{r}
+epred2_22|> 
+  mutate(herbicide = fct_relevel(herbicide,
+                                 levels = c("glufosinate", "glufosinate + dimethenamid-P",
+                                            "glufosinate + imazethapyr", 
+                                            "glufosinate + *S*-metolachlor",
+                                            "glufosinate + pyroxasulfone", "glufosinate + acetochlor",
+                                            "glufosinate + fomesafen + acetochlor",
+                                            "glufosinate + fomesafen + *S*-metolachlor",
+                                            "glufosinate + fomesafen"))) |> 
+  mutate(emmean = round(emmean, 2)) -> epred2_222
+```
+
+```{r}
+epred2_222 %>% 
+ggplot(aes(x = fct_reorder(herbicide, emmean),
+           y = emmean * 100, color = herbicide)) +
+  geom_point(size = 2) +
+  geom_linerange(aes(ymin = lower.HPD * 100, ymax = upper.HPD * 100),
+                 size = 1.2) +
+  coord_flip() +
+  facet_grid(~ DAT) +
+  geom_text_repel(aes(label = round(emmean*100,1)), size = 3.5,
+                    force_pull = 0,
+                    direction = "y",
+                    point.padding = NA,
+                    min.segment.length = 14,
+                    vjust = 0.5,
+                    position = position_nudge_repel(x = 0.3),
+                    seed = 465) +
+#  scale_color_brewer(palette = "Set1") +
+  scale_color_calc() +
+  ylim(0, 100) +
+  labs(x = NULL, y = "Waterhemp control (%)") +
+  theme_bw() +
+  theme(axis.text.y = element_markdown(),
+        axis.title.x = element_blank(),
+        strip.text = element_markdown(size = 11, face = "bold"),
+        legend.position = "none",
+        plot.background = element_rect(fill = "#F5F5F5"),
+        panel.background = element_rect(fill = "#F5F5F5"),
+        axis.text = element_markdown(color = "#333333")) -> fig2
+
+ggsave("figures/Figure 22.png", width = 5, height = 4)
+```
+
 # Harvest
 
 ```{r}
@@ -183,6 +317,72 @@ describe_posterior(whv_main,
                    ci = .95, ci_method = "hdi",
                    test = c("bayesfactor"),
                    bf_prior = model5)
+```
+
+
+```{r}
+epred5 %>% 
+  mutate(herbicide = fct_recode(herbicide,
+                                "PRE fb glufosinate + fomesafen + *S*-metolachlor" = "PRE fb glufosinate + fomesafen + S-metolachlor",
+                                "PRE fb glufosinate + *S*-metolachlor" = "PRE fb glufosinate + S-metolachlor")) %>% 
+  mutate(herbicide = str_remove(herbicide, "PRE fb ")) -> epred55
+```
+
+```{r}
+epred55 |> 
+  mutate(herbicide = fct_relevel(herbicide,
+                                 levels = c("glufosinate", "glufosinate + dimethenamid-P",
+                                            "glufosinate + imazethapyr", 
+                                            "glufosinate + *S*-metolachlor",
+                                            "glufosinate + pyroxasulfone", "glufosinate + acetochlor",
+                                            "glufosinate + fomesafen + acetochlor",
+                                            "glufosinate + fomesafen + *S*-metolachlor",
+                                            "glufosinate + fomesafen"))) |> 
+  mutate(emmean = round(emmean, 2)) -> epred555
+```
+
+```{r}
+epred555 %>% 
+ggplot(aes(x = fct_reorder(herbicide, emmean),
+           y = emmean * 100, color = herbicide)) +
+  geom_point(size = 2) +
+  geom_linerange(aes(ymin = lower.HPD * 100, ymax = upper.HPD * 100),
+                 size = 1.2) +
+  coord_flip() +
+  facet_grid(~ DAT) +
+  geom_text_repel(aes(label = round(emmean*100,1)), size = 3.5,
+                    force_pull = 0,
+                    direction = "y",
+                    point.padding = NA,
+                    min.segment.length = 14,
+                    vjust = 0.5,
+                    position = position_nudge_repel(x = 0.3),
+                    seed = 465) +
+#  scale_color_brewer(palette = "Set1") +
+  scale_color_calc() +
+  ylim(0, 100) +
+  labs(x = NULL, y = "Waterhemp control (%)") +
+  theme_bw() +
+  theme(axis.text.y = element_markdown(),
+        strip.text = element_markdown(size = 11, face = "bold"),
+        legend.position = "none",
+        plot.background = element_rect(fill = "#F5F5F5"),
+        panel.background = element_rect(fill = "#F5F5F5"),
+        axis.text = element_markdown(color = "#333333")) -> fig3
+
+#ggsave("figures/Figure 222.png", width = 5, height = 4)
+```
+
+
+```{r}
+library(patchwork)
+```
+
+```{r}
+fig1 / fig2 / fig3 +
+  plot_annotation(tag_levels = 'A')
+
+ggsave("figures/Figure 2.png", width = 6, height = 12)
 ```
 
 
@@ -238,9 +438,9 @@ ggplot(aes(x = fct_reorder(herbicide, emmean),
         legend.position = "none",
         plot.background = element_rect(fill = "#F5F5F5"),
         panel.background = element_rect(fill = "#F5F5F5"),
-        axis.text = element_markdown(color = "#333333")) -> fig1
+        axis.text = element_markdown(color = "#333333")) 
 
-ggsave("figures/Figure 2.png", width = 8, height = 4)
+#ggsave("figures/Figure 2.png", width = 9, height = 4)
 ```
 
 # Yield
@@ -279,19 +479,7 @@ model4 <- brm(yield_bu ~ herbicide +
 summary(model4)
 ```
 
-```{r}
-new_dt %>% 
-  group_by(herbicide) %>% 
-  summarise(biomass = mean(biomass_gm2, na.rm = TRUE),
-            counts = mean(counts_m2, na.rm = TRUE))
-```
 
-```{r}
-epred4 <- emmeans(model4, "herbicide", epred = TRUE,
-                  #cont="pairwise"
-                  )
-epred4
-```
 
 ```{r}
 yield_main <- pairs(emmeans(model4, ~ herbicide))
@@ -307,8 +495,8 @@ describe_posterior(yield_main,
 ```{r}
 epred4 |> as_tibble() %>% 
   mutate(herbicide = fct_recode(herbicide,
-                                "PRE fb glufosinate + fomesafen + *S*-metolachlor" = "PRE fb glufosinate + fomesafen + S-metolachlor",
-                                "PRE fb glufosinate + *S*-metolachlor" = "PRE fb glufosinate + S-metolachlor")) %>% 
+           "PRE fb glufosinate + fomesafen + *S*-metolachlor" = "PRE fb glufosinate + fomesafen + S-metolachlor",
+           "PRE fb glufosinate + *S*-metolachlor" = "PRE fb glufosinate + S-metolachlor")) %>% 
   mutate(herbicide = str_remove(herbicide, "PRE fb ")) -> epred4_wt
 ```
 
@@ -323,22 +511,11 @@ epred4_wt %>%
                                             "glufosinate + fomesafen + acetochlor",
                                             "glufosinate + fomesafen + *S*-metolachlor"))) -> epred4_wt1
 ```
+
+
+
 ```{r}
 epred4_wt1 %>%
-  mutate(herbicide = fct_relevel(herbicide,
-                                 levels = c("glufosinate", "glufosinate + dimethenamid-P",
-                                            "glufosinate + imazethapyr", 
-                                            "glufosinate + *S*-metolachlor",
-                                            "glufosinate + pyroxasulfone", 
-                                            "glufosinate + acetochlor", "glufosinate + fomesafen",
-                                            "glufosinate + fomesafen + acetochlor",
-                                            "glufosinate + fomesafen + *S*-metolachlor"))) -> epred4_wt1
-```
-
-
-
-```{r}
-epred4_wt %>%
   ggplot(aes(x = fct_reorder(herbicide, emmean),
            y = emmean, color = herbicide)) +
   geom_point(size = 2) +
@@ -421,3 +598,43 @@ mod_3 <- lmer(biomass_gm2 ~ herbicide +
 anova(mod_3)
 ```
 
+## Weed density
+
+
+```{r}
+new_dt |> 
+  ungroup() |> 
+  dplyr::select(location, year, herbicide, rep, counts_m2) |> 
+  filter(!is.na(counts_m2)) -> density
+```
+
+
+```{r}
+model6 <- brm(counts_m2 ~ herbicide +
+                (1|rep/location), 
+                  family = poisson(),
+               warmup = 1000, iter = 2000, chains = 4, 
+              control = list(adapt_delta = 0.999, max_treedepth = 11),
+               prior = set_prior("student_t(0.1, 2, 8)", 
+                                 class = "b"),
+              seed = 1234,
+                  data = new_dt, save_pars = save_pars(all = TRUE))
+```
+
+```{r}
+epred6 <- emmeans(model6, "herbicide", epred = TRUE,
+                  #cont="pairwise"
+                  )
+epred6
+```
+
+
+```{r}
+density_main <- pairs(emmeans(model6, ~ herbicide))
+
+describe_posterior(density_main,
+                   centrality = "median", dispersion = TRUE,
+                   ci = .95, ci_method = "hdi",
+                   test = c("bayesfactor"),
+                   bf_prior = model6)
+```
