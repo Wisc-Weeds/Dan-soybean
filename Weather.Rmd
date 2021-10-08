@@ -16,6 +16,7 @@ library(ggthemes)
 library(nasapower)
 library(ggdist)
 library(vegan)
+#https://cran.r-project.org/web/packages/ggdist/vignettes/slabinterval.html
 ```
 
 
