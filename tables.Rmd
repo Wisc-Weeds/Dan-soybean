@@ -38,14 +38,14 @@ tables %>%
 #  gt_hulk_col_numeric(`14 DAT`:Yield, reverse = FALSE, trim = TRUE)
 
 
-gtsave(fig_tab, "figures/Figure 3.png")
+gtsave(fig_tab, "figures/Figure 4.png")
 ```
 
 
 
 
 ```{r}
-bayes <- read_csv("bayes1.csv")
+bayes <- read_csv("data/bayes1.csv")
 ```
 
 ```{r}
@@ -53,6 +53,6 @@ bayes |>
   gt() %>% 
   gt_theme_espn() -> fig_tab1
 
-gtsave(fig_tab1, "figures/Figure 1.png")
+gtsave(fig_tab1, "figures/Figure 2.png")
 ```
 
