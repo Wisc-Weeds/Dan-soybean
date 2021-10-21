@@ -98,7 +98,7 @@ weather2 %>%
   geom_jitter(data = weather2 %>% 
                 filter(variable == "NA"), show.legend = FALSE, 
               color = "#333333", alpha = 0.02, shape = 16) +
-  stat_gradientinterval(position = "dodge", fill_type = "gradient") +
+  stat_gradientinterval(position = "dodge") +
   theme_bw() +
   geom_richtext(data = text1, aes(x = 3.4, y = 44.6), lineheight = 0.4, 
             label = "Mean air temperature <br>in <b style='color:2;'>2019</b> and <b style='color:4;'>2020</b>", size = 2, 
@@ -116,13 +116,13 @@ weather2 %>%
   scale_color_manual(values = c(2, 4, "#333333")) +
   scale_fill_manual(values = c(2, 4, "#333333")) +
   facet_grid(~ site) +
-  labs(x = NULL, y = "Mean air temperature (C)") +
+  labs(x = NULL, y = "Mean air temperature (F)") +
   theme(legend.position = "none",
         strip.text = element_markdown(face = "bold", size = 11),
         plot.background = element_rect(fill = "#F9F6EE"),
         panel.background = element_rect(fill = "#F9F6EE")) -> fig1
 
-ggsave("weather.png", height = 3, width = 6)
+ggsave("figures/weather.png", height = 3, width = 6)
 ```
 
 ```{r}
@@ -171,7 +171,7 @@ weather2_pp |>
         plot.background = element_rect(fill = "#F9F6EE"),
         panel.background = element_rect(fill = "#F9F6EE")) -> fig2
 
-ggsave("pp_in.png", height = 3, width = 6)
+ggsave("figures/pp_in.png", height = 3, width = 6)
 ```
 
 
@@ -183,6 +183,6 @@ library(patchwork)
 fig1 / fig2 +
   plot_annotation(tag_levels = 'A')
 
-ggsave("pp_ine.png", height = 6, width = 6)
+ggsave("figures/Figure 1.png", height = 6, width = 6)
 ```
 

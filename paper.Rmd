@@ -174,11 +174,11 @@ ggplot(aes(x = fct_reorder(herbicide, emmean),
         axis.title.x = element_blank(),
         strip.text = element_markdown(size = 11, face = "bold"),
         legend.position = "none",
-        plot.background = element_rect(fill = "#F5F5F5"),
-        panel.background = element_rect(fill = "#F5F5F5"),
+        plot.background = element_rect(fill = "#F9F6EE"),
+        panel.background = element_rect(fill = "#F9F6EE"),
         axis.text = element_markdown(color = "#333333")) -> fig1
 
-ggsave("figures/Figure 2.png", width = 5, height = 4)
+#ggsave("figures/Figure 2.png", width = 5, height = 4)
 ```
 
 
@@ -235,6 +235,7 @@ epred2_2 %>%
   mutate(herbicide = str_remove(herbicide, "PRE fb ")) -> epred2_22
 ```
 
+
 ```{r}
 epred2_22|> 
   mutate(herbicide = fct_relevel(herbicide,
@@ -274,11 +275,10 @@ ggplot(aes(x = fct_reorder(herbicide, emmean),
         axis.title.x = element_blank(),
         strip.text = element_markdown(size = 11, face = "bold"),
         legend.position = "none",
-        plot.background = element_rect(fill = "#F5F5F5"),
-        panel.background = element_rect(fill = "#F5F5F5"),
+        plot.background = element_rect(fill = "#F9F6EE"),
+        panel.background = element_rect(fill = "#F9F6EE"),
         axis.text = element_markdown(color = "#333333")) -> fig2
-
-ggsave("figures/Figure 22.png", width = 5, height = 4)
+#ggsave("figures/Figure 22.png", width = 5, height = 4)
 ```
 
 # Harvest
@@ -379,10 +379,10 @@ library(patchwork)
 ```
 
 ```{r}
-fig1 / fig2 / fig3 +
+fig1 / fig2 +
   plot_annotation(tag_levels = 'A')
 
-ggsave("figures/Figure 2.png", width = 6, height = 12)
+ggsave("figures/Figure 3.png", width = 6, height = 8)
 ```
 
 
@@ -391,7 +391,7 @@ ggsave("figures/Figure 2.png", width = 6, height = 12)
 ```{r}
 epred1_1 %>% 
   bind_rows(epred2_2) %>% 
-  bind_rows(epred5) |> 
+#  bind_rows(epred5) |> 
   mutate(herbicide = fct_recode(herbicide,
                                 "PRE fb glufosinate + fomesafen + *S*-metolachlor" = "PRE fb glufosinate + fomesafen + S-metolachlor",
                                 "PRE fb glufosinate + *S*-metolachlor" = "PRE fb glufosinate + S-metolachlor")) %>% 
@@ -537,11 +537,11 @@ epred4_wt1 %>%
   theme(axis.text.y = element_markdown(),
         strip.text = element_markdown(size = 11),
         legend.position = "none",
-        plot.background = element_rect(fill = "#F5F5F5"),
-        panel.background = element_rect(fill = "#F5F5F5"),
+        plot.background = element_rect(fill = "#F9F6EE"),
+        panel.background = element_rect(fill = "#F9F6EE"),
         axis.text = element_markdown(color = "#333333")) -> fig2
 
-ggsave("figures/Figure 4.png", width = 6, height = 4)
+ggsave("figures/Figure 5.png", width = 6, height = 4)
 ```
 
 

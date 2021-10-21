@@ -14,7 +14,8 @@ library(gt)
 
 
 ```{r}
-tables <- read_csv("data/tables.csv")
+tables <- read_csv("data/tables.csv") |> 
+  dplyr::select(-Harvest)
 ```
 
 ```{r}
