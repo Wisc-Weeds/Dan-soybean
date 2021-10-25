@@ -18,9 +18,6 @@ library(lmerTest)
 library(ggthemes)
 library(ggrepel)
 library(tidytext)
-```
-
-```{r}
 library(rstanarm)
 library(brms)
 library(bayestestR)
@@ -30,7 +27,7 @@ library(BayesFactor)
 # Load dataset
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
-data <- read_csv("SB12.csv")
+data <- read_csv("data/SB12.csv")
 ```
 
 ```{r}
@@ -82,6 +79,11 @@ new_dt |>
   facet_grid(year ~ location)
 ```
 
+```{r}
+new_dt |> 
+  group_by(herbicide) |> 
+  summarise(control = mean(wt_28))
+```
 
 
 
